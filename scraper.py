@@ -8,6 +8,8 @@ import csv
 import pandas as pd
 import numpy as np
 
+import sqlite3
+
 
 driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()))
 
@@ -93,3 +95,27 @@ print()
 # E.g. if today = mon, then (mon = day) and (tues = day+1), if today = tues, then (tues = day) and (wed = day+1), etc.
 # This is because the website uses text to show the date.
 
+
+# Creates connection to weather_db.db file
+try:
+    with sqlite3.connect("weather_db.db") as conn:
+
+        cursor = conn.cursor()
+
+        # Create the base table
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS weather_data(
+        weather_id INTEGER PRIMARY KEY,
+        location TEXT NOT NULL,
+        temperature TEXT NOT NULL,
+        time TEXT NOT NULL
+        )
+        """)
+
+        # Send cleaned df to sql weather_data table
+        weather_df.to_sql("weather_data", conn, if_exists="append", index=False)
+
+        conn.commit()
+
+except Exception as e:
+    print("Error doing the request: " + e)
