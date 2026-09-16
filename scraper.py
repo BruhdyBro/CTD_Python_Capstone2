@@ -17,7 +17,7 @@ driver.get("https://www.timeanddate.com/weather/")
 
 
 # Getting table elements down to table data
-main_table = driver.find_element(By.CSS_SELECTOR, 'table.zebra.fw.tb-theme')
+main_table = driver.find_element(By.CSS_SELECTOR, 'table')
 
 table_body = main_table.find_element(By.CSS_SELECTOR, 'tbody')
 
@@ -26,19 +26,19 @@ table_rows = table_body.find_elements(By.CSS_SELECTOR, 'tr')
 with open('weather.csv', mode='w', newline='', encoding='utf-8') as file:
 
     writer = csv.writer(file)
-    headers = ["location", "temperature", "time"]
+    headers = ["location", "country", "temperature", "time"]
     writer.writerow(headers)
 
         
     for row in table_rows:
-        table_data = row.find_elements(By.CSS_SELECTOR, 'td')
-                
-        for i in range(0, len(table_data), 4):
-            loc_name = table_data[i].text
-            loc_time = table_data[i + 1].text
-            loc_temp = table_data[i + 3].text
+        
 
-            writer.writerow([loc_name, loc_temp, loc_time])
+        loc_name = row.find_element(By.CSS_SELECTOR, 'a.tad-link').text
+        loc_country = row.find_element(By.CSS_SELECTOR, 'td.tad-weather-table__country-cell').text
+        loc_temp = row.find_element(By.CSS_SELECTOR, 'td.tad-weather-table__temperature-cell').text
+        loc_time = row.find_element(By.CSS_SELECTOR, 'span.tad-weather-table__row-time-value').text
+
+        writer.writerow([loc_name, loc_country, loc_temp, loc_time])
 
 driver.quit()
 
@@ -91,9 +91,16 @@ print(weather_df)
 print()
 
 
-# Might parse time into date Pandas format, but would require checking today's date compared to tmr for each day
-# E.g. if today = mon, then (mon = day) and (tues = day+1), if today = tues, then (tues = day) and (wed = day+1), etc.
-# This is because the website uses text to show the date.
+#
+#   Creating raw temperature column for numeric comparison
+#
+
+weather_df['raw_temp'] = weather_df['temperature'].str.replace(" °F","")
+weather_df['raw_temp'] = pd.to_numeric(weather_df['raw_temp'], errors="coerce")
+weather_df.info()
+print()
+print(weather_df)
+print()
 
 
 # Creates connection to weather_db.db file
@@ -107,8 +114,10 @@ try:
         CREATE TABLE IF NOT EXISTS weather_data(
         weather_id INTEGER PRIMARY KEY,
         location TEXT NOT NULL,
+        country TEXT NOT NULL,
         temperature TEXT NOT NULL,
-        time TEXT NOT NULL
+        time TEXT NOT NULL,
+        raw_temp INTEGER
         )
         """)
 
