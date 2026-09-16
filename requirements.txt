@@ -1,0 +1,9 @@
+numpy
+pandas
+matplotlib
+plotly
+seaborn
+gunicorn
+streamlit
+selenium
+webdriver-manager
